@@ -26,13 +26,21 @@
                 <span>${group.name}</span>
                 <span class="group-tv-group-count">(${group.streamers.length})</span>
             </div>
-            <button class="group-tv-delete-btn" data-group-id="${group.id}">×</button>
+            <div class="group-tv-group-actions">
+                <button class="group-tv-add-streamer-btn" data-group-id="${group.id}">+</button>
+                <button class="group-tv-delete-btn" data-group-id="${group.id}">×</button>
+            </div>
         `;
         
-        // Add click handler to toggle group visibility
         groupDiv.addEventListener('click', (e) => {
-            // Don't toggle if clicking the delete button
-            if (!e.target.classList.contains('group-tv-delete-btn')) {
+            // Don't toggle if clicking buttons or their children
+            const isButtonClick = e.target.closest('.group-tv-delete-btn') || 
+                                 e.target.closest('.group-tv-add-streamer-btn') ||
+                                 e.target.classList.contains('group-tv-delete-btn') || 
+                                 e.target.classList.contains('group-tv-add-streamer-btn');
+            
+            if (!isButtonClick) {
+                console.log('Group clicked, toggling visibility for:', group.id);
                 toggleGroupVisibility(group.id);
             }
         });
@@ -42,6 +50,13 @@
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             deleteGroup(group.id);
+        });
+        
+        // Add streamer button handler
+        const addStreamerBtn = groupDiv.querySelector('.group-tv-add-streamer-btn');
+        addStreamerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addStreamerToGroup(group.id);
         });
         
         return groupDiv;
@@ -125,10 +140,24 @@
     
     // Function to toggle group visibility
     function toggleGroupVisibility(groupId) {
-        const streamersContainer = document.querySelector(`[data-group-id="${groupId}"]`);
+        console.log('toggleGroupVisibility called with groupId:', groupId);
+        const streamersContainer = document.querySelector(`.group-tv-streamers[data-group-id="${groupId}"]`);
+        console.log('Found streamers container:', streamersContainer);
+        
         if (streamersContainer) {
-            const isVisible = streamersContainer.style.display !== 'none';
-            streamersContainer.style.display = isVisible ? 'none' : 'block';
+            const isVisible = streamersContainer.classList.contains('show');
+            console.log('Current visibility:', isVisible);
+            
+            if (isVisible) {
+                streamersContainer.classList.remove('show');
+                console.log('Hiding streamers');
+            } else {
+                streamersContainer.classList.add('show');
+                console.log('Showing streamers');
+            }
+        } else {
+            console.log('Streamers container not found for group:', groupId);
+            console.log('Available containers:', document.querySelectorAll('.group-tv-streamers[data-group-id]'));
         }
     }
     
@@ -143,6 +172,33 @@
                 updateFollowingList();
             });
         }
+    }
+    
+    // Function to add streamer to group
+    function addStreamerToGroup(groupId) {
+        const streamerName = prompt('Enter streamer name (without @):');
+        if (!streamerName || !streamerName.trim()) return;
+        
+        const group = groups.find(g => g.id === groupId);
+        if (!group) return;
+        
+        // Check if streamer already exists in group
+        const existingStreamer = group.streamers.find(s => s.name.toLowerCase() === streamerName.trim().toLowerCase());
+        if (existingStreamer) {
+            alert('This streamer is already in the group!');
+            return;
+        }
+        
+        const streamer = {
+            name: streamerName.trim(),
+            addedAt: Date.now()
+        };
+        
+        group.streamers.push(streamer);
+        
+        chrome.storage.local.set({groups: groups}, function() {
+            updateFollowingList();
+        });
     }
     
     // Function to setup persistent observer

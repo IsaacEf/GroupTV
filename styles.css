@@ -33,9 +33,18 @@
     opacity: 0.8;
 }
 
+.group-tv-group-actions {
+    display: flex;
+    gap: 4px;
+}
+
 .group-tv-streamers {
     margin-left: 20px;
     display: none;
+}
+
+.group-tv-streamers.show {
+    display: block;
 }
 
 .group-tv-streamer {
@@ -69,4 +78,20 @@
 
 .group-tv-delete-btn:hover {
     background: rgba(255, 0, 0, 0.3);
+}
+
+.group-tv-add-streamer-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.group-tv-add-streamer-btn:hover {
+    background: rgba(0, 255, 0, 0.3);
 }
