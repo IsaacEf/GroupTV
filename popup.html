@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 350px;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .group-section {
+            margin-bottom: 20px;
+        }
+        
+        .group-item {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .group-name {
+            font-weight: bold;
+        }
+        
+        .streamer-count {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .add-group-btn {
+            background: #9146ff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .add-group-btn:hover {
+            background: #7c3aed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>GroupTV</h2>
+        <p>Manage your Twitch streamer groups</p>
+    </div>
+    
+    <div class="group-section">
+        <button class="add-group-btn" id="addGroupBtn">+ Create New Group</button>
+    </div>
+    
+    <div id="groupsList">
+        <!-- Groups will be populated here -->
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

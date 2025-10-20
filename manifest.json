@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "GroupTV - Twitch Streamer Groups",
+  "version": "1.0.0",
+  "description": "Create custom groups of Twitch streamers for easy access in the sidebar",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.twitch.tv/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Manage Streamer Groups"
+  }
+}
