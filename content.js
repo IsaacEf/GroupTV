@@ -1,4 +1,3 @@
-// Content script to inject groups into Twitch following list
 (function() {
     'use strict';
     
@@ -8,7 +7,6 @@
     let retryCount = 0;
     const maxRetries = 10;
     
-    // Function to load groups from storage
     function loadGroups() {
         chrome.storage.local.get(['groups'], function(result) {
             groups = result.groups || [];
@@ -18,7 +16,6 @@
         });
     }
     
-    // Function to create group element
     function createGroupElement(group) {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'group-tv-custom-group';
@@ -29,17 +26,28 @@
                 <span>${group.name}</span>
                 <span class="group-tv-group-count">(${group.streamers.length})</span>
             </div>
+            <button class="group-tv-delete-btn" data-group-id="${group.id}">×</button>
         `;
         
         // Add click handler to toggle group visibility
-        groupDiv.addEventListener('click', () => {
-            toggleGroupVisibility(group.id);
+        groupDiv.addEventListener('click', (e) => {
+            // Don't toggle if clicking the delete button
+            if (!e.target.classList.contains('group-tv-delete-btn')) {
+                toggleGroupVisibility(group.id);
+            }
+        });
+        
+        // Add delete button handler
+        const deleteBtn = groupDiv.querySelector('.group-tv-delete-btn');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteGroup(group.id);
         });
         
         return groupDiv;
     }
     
-    // Function to create streamer elements for a group
+    //create streamer elements for a group
     function createStreamerElements(group) {
         const streamersContainer = document.createElement('div');
         streamersContainer.className = 'group-tv-streamers';
@@ -64,7 +72,7 @@
         return streamersContainer;
     }
     
-    // Function to find the following list with multiple selectors
+    // find the following list with selectors
     function findFollowingList() {
         const selectors = [
             '[data-testid="recommended-channels"]',
@@ -121,6 +129,19 @@
         if (streamersContainer) {
             const isVisible = streamersContainer.style.display !== 'none';
             streamersContainer.style.display = isVisible ? 'none' : 'block';
+        }
+    }
+    
+    // Function to delete a group
+    function deleteGroup(groupId) {
+        if (confirm('Are you sure you want to delete this group?')) {
+            // Remove from groups array
+            groups = groups.filter(group => group.id !== groupId);
+            
+            // Update storage
+            chrome.storage.local.set({groups: groups}, function() {
+                updateFollowingList();
+            });
         }
     }
     

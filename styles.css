@@ -54,3 +54,19 @@
 .group-tv-streamer:hover {
     background: #e0e0e0;
 }
+
+.group-tv-delete-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.group-tv-delete-btn:hover {
+    background: rgba(255, 0, 0, 0.3);
+}
