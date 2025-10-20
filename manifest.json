@@ -10,6 +10,14 @@
   "host_permissions": [
     "https://www.twitch.tv/*"
   ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.twitch.tv/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Manage Streamer Groups"
