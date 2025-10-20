@@ -76,7 +76,6 @@
                 <span>${streamer.name}</span>
             `;
             
-            // Click to visit streamer
             streamerDiv.addEventListener('click', () => {
                 window.open(`https://www.twitch.tv/${streamer.name}`, '_blank');
             });
@@ -108,7 +107,7 @@
         return null;
     }
     
-    // Function to update the following list
+    //update the following list
     function updateFollowingList() {
         const followingList = findFollowingList();
         
@@ -123,18 +122,21 @@
         // Reset retry count on success
         retryCount = 0;
         
-        // Remove existing group elements
-        const existingGroups = document.querySelectorAll('.group-tv-custom-group');
-        existingGroups.forEach(group => group.remove());
+        const existingWrappers = document.querySelectorAll('.group-tv-wrapper');
+        existingWrappers.forEach(wrapper => wrapper.remove());
         
-        // Add groups at the top
         groups.forEach(group => {
             const groupElement = createGroupElement(group);
             const streamersElement = createStreamerElements(group);
             
+            // Create a wrapper div to keep group and streamers together
+            const groupWrapper = document.createElement('div');
+            groupWrapper.className = 'group-tv-wrapper';
+            groupWrapper.appendChild(groupElement);
+            groupWrapper.appendChild(streamersElement);
+            
             // Insert at the very beginning
-            followingList.insertBefore(streamersElement, followingList.firstChild);
-            followingList.insertBefore(groupElement, followingList.firstChild);
+            followingList.insertBefore(groupWrapper, followingList.firstChild);
         });
     }
     
@@ -164,10 +166,8 @@
     // Function to delete a group
     function deleteGroup(groupId) {
         if (confirm('Are you sure you want to delete this group?')) {
-            // Remove from groups array
             groups = groups.filter(group => group.id !== groupId);
             
-            // Update storage
             chrome.storage.local.set({groups: groups}, function() {
                 updateFollowingList();
             });
@@ -201,7 +201,6 @@
         });
     }
     
-    // Function to setup persistent observer
     function setupObserver() {
         if (observer) {
             observer.disconnect();
@@ -233,7 +232,6 @@
             }
         });
         
-        // Observe the entire document for changes
         observer.observe(document.body, {
             childList: true,
             subtree: true
@@ -265,7 +263,6 @@
         init();
     }
     
-    // Also initialize when navigating (for SPA behavior)
     let lastUrl = location.href;
     new MutationObserver(() => {
         const url = location.href;

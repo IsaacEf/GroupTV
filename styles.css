@@ -1,97 +1,189 @@
-/* GroupTV Extension Styles */
+/* GroupTV Extension Styles - Seamless Twitch Integration */
 
+/* Group header styling to match Twitch sidebar sections */
 .group-tv-custom-group {
-    background: #9146ff;
-    color: white;
-    padding: 12px 16px;
-    margin: 8px 0;
-    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-base, #efeff1);
+    padding: 8px 12px;
+    margin: 0;
+    border-radius: 0;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 600;
-    transition: background-color 0.2s;
+    font-size: 14px;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid var(--color-border-base, #3a3a3d);
+    position: relative;
 }
 
 .group-tv-custom-group:hover {
-    background: #7c3aed;
+    background: var(--color-background-hover, #3a3a3d);
 }
 
+/* Group content styling */
 .group-tv-group-content {
     display: flex;
     align-items: center;
+    flex: 1;
 }
 
 .group-tv-group-icon {
     margin-right: 8px;
+    font-size: 16px;
 }
 
 .group-tv-group-count {
     margin-left: 8px;
     font-size: 12px;
-    opacity: 0.8;
+    opacity: 0.7;
+    font-weight: 400;
 }
 
+/* Action buttons styling to match Twitch */
 .group-tv-group-actions {
     display: flex;
     gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
+.group-tv-custom-group:hover .group-tv-group-actions {
+    opacity: 1;
+}
+
+.group-tv-delete-btn,
+.group-tv-add-streamer-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-alt, #adadb8);
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.15s ease;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.group-tv-delete-btn:hover {
+    background: var(--color-background-button-danger-hover, rgba(255, 0, 0, 0.1));
+    color: var(--color-text-danger, #ff6b6b);
+}
+
+.group-tv-add-streamer-btn:hover {
+    background: var(--color-background-button-success-hover, rgba(0, 255, 0, 0.1));
+    color: var(--color-text-success, #00d4aa);
+}
+
+/* Streamers container */
 .group-tv-streamers {
-    margin-left: 20px;
+    margin: 0;
+    padding: 0;
     display: none;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
 }
 
 .group-tv-streamers.show {
     display: block;
 }
 
+/* Individual streamer styling to match Twitch following list */
 .group-tv-streamer {
-    background: #f0f0f0;
-    color: #333;
-    padding: 8px 12px;
-    margin: 4px 0;
-    border-radius: 6px;
+    background: transparent;
+    color: var(--color-text-base, #efeff1);
+    padding: 8px 12px 8px 24px;
+    margin: 0;
+    border-radius: 0;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: background-color 0.2s;
+    transition: background-color 0.15s ease;
+    border-bottom: none;
+    font-size: 14px;
+    font-weight: 400;
+    position: relative;
+    min-height: 40px;
 }
 
 .group-tv-streamer:hover {
-    background: #e0e0e0;
+    background: var(--color-background-hover, #3a3a3d);
 }
 
-.group-tv-delete-btn {
-    background: rgba(255, 255, 255, 0.2);
+.group-tv-streamer:last-child {
+    border-bottom: 1px solid var(--color-border-base, #3a3a3d);
+}
+
+/* Wrapper styling */
+.group-tv-wrapper {
+    margin: 0;
+    background: transparent;
     border: none;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background-color 0.2s;
+    border-radius: 0;
 }
 
-.group-tv-delete-btn:hover {
-    background: rgba(255, 0, 0, 0.3);
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .group-tv-custom-group,
+    .group-tv-streamer {
+        color: #efeff1;
+    }
+    
+    .group-tv-custom-group:hover,
+    .group-tv-streamer:hover {
+        background: #3a3a3d;
+    }
+    
+    .group-tv-group-count {
+        opacity: 0.7;
+    }
 }
 
-.group-tv-add-streamer-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background-color 0.2s;
+/* Light mode support */
+@media (prefers-color-scheme: light) {
+    .group-tv-custom-group,
+    .group-tv-streamer {
+        color: #0e0e10;
+    }
+    
+    .group-tv-custom-group:hover,
+    .group-tv-streamer:hover {
+        background: #f7f7f8;
+    }
+    
+    .group-tv-group-count {
+        opacity: 0.6;
+    }
 }
 
-.group-tv-add-streamer-btn:hover {
-    background: rgba(0, 255, 0, 0.3);
+/* Ensure proper spacing and alignment with Twitch sidebar */
+.group-tv-wrapper:first-child {
+    margin-top: 0;
+}
+
+.group-tv-wrapper:last-child {
+    margin-bottom: 0;
+}
+
+/* Match Twitch's focus states */
+.group-tv-streamer:focus,
+.group-tv-custom-group:focus {
+    outline: 2px solid var(--color-border-brand, #9146ff);
+    outline-offset: -2px;
+}
+
+/* Match Twitch's button focus states */
+.group-tv-delete-btn:focus,
+.group-tv-add-streamer-btn:focus {
+    outline: 2px solid var(--color-border-brand, #9146ff);
+    outline-offset: 1px;
 }
