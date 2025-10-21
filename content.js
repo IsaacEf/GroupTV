@@ -131,12 +131,23 @@
     
     //update the following list
     function updateFollowingList() {
+        // Prevent multiple simultaneous updates
+        if (window.groupTvUpdating) {
+            return;
+        }
+        window.groupTvUpdating = true;
+        
         const followingList = findFollowingList();
         
         if (!followingList) {
             retryCount++;
             if (retryCount < maxRetries) {
-                setTimeout(updateFollowingList, 1000);
+                setTimeout(() => {
+                    window.groupTvUpdating = false;
+                    updateFollowingList();
+                }, 1000);
+            } else {
+                window.groupTvUpdating = false;
             }
             return;
         }
@@ -144,33 +155,50 @@
         // Reset retry count on success
         retryCount = 0;
         
-        // Remove ALL existing group elements completely
-        const existingWrappers = document.querySelectorAll('.group-tv-wrapper');
-        existingWrappers.forEach(wrapper => wrapper.remove());
+        // More comprehensive cleanup - remove ALL possible group elements
+        const allGroupElements = document.querySelectorAll(`
+            .group-tv-wrapper,
+            .group-tv-custom-group,
+            .group-tv-streamers,
+            [class*="group-tv"]
+        `);
+        allGroupElements.forEach(element => {
+            if (element && element.parentNode) {
+                element.remove();
+            }
+        });
         
-        // Also remove any orphaned group elements
-        const orphanedGroups = document.querySelectorAll('.group-tv-custom-group, .group-tv-streamers');
-        orphanedGroups.forEach(element => element.remove());
-        
-        // Wait a bit to ensure DOM is clean before adding new elements
+        // Wait a bit to ensure DOM is completely clean before adding new elements
         setTimeout(() => {
-            groups.forEach(group => {
-                const groupElement = createGroupElement(group);
-                const streamersElement = createStreamerElements(group);
-                
-                // Create a wrapper div to keep group and streamers together
-                const groupWrapper = document.createElement('div');
-                groupWrapper.className = 'group-tv-wrapper';
-                groupWrapper.appendChild(groupElement);
-                groupWrapper.appendChild(streamersElement);
-                
-                // Insert at the very beginning
-                followingList.insertBefore(groupWrapper, followingList.firstChild);
-            });
+            // Double-check that no group elements remain
+            const remainingElements = document.querySelectorAll('.group-tv-wrapper, .group-tv-custom-group, .group-tv-streamers');
+            if (remainingElements.length > 0) {
+                remainingElements.forEach(element => element.remove());
+            }
             
-            // Update live status indicators after creating the elements
-            setTimeout(updateLiveStatusIndicators, 500);
-        }, 100);
+            // Only add groups if we have groups to add
+            if (groups && groups.length > 0) {
+                groups.forEach(group => {
+                    const groupElement = createGroupElement(group);
+                    const streamersElement = createStreamerElements(group);
+                    
+                    // Create a wrapper div to keep group and streamers together
+                    const groupWrapper = document.createElement('div');
+                    groupWrapper.className = 'group-tv-wrapper';
+                    groupWrapper.appendChild(groupElement);
+                    groupWrapper.appendChild(streamersElement);
+                    
+                    // Insert at the very beginning
+                    followingList.insertBefore(groupWrapper, followingList.firstChild);
+                });
+                
+                // Update live status indicators after creating the elements
+                setTimeout(updateLiveStatusIndicators, 500);
+            }
+            
+            // Reset the updating flag
+            window.groupTvUpdating = false;
+        }, 200);
     }
     
     // Function to toggle group visibility
@@ -427,21 +455,29 @@
             window.groupTvUpdateTimeout = null;
         }
         
-        // Remove all existing elements first
-        const existingWrappers = document.querySelectorAll('.group-tv-wrapper');
-        existingWrappers.forEach(wrapper => wrapper.remove());
+        // More comprehensive cleanup - remove ALL possible group elements
+        const allGroupElements = document.querySelectorAll(`
+            .group-tv-wrapper,
+            .group-tv-custom-group,
+            .group-tv-streamers,
+            [class*="group-tv"]
+        `);
+        allGroupElements.forEach(element => {
+            if (element && element.parentNode) {
+                element.remove();
+            }
+        });
         
-        // Also remove any orphaned group elements
-        const orphanedGroups = document.querySelectorAll('.group-tv-custom-group, .group-tv-streamers');
-        orphanedGroups.forEach(element => element.remove());
-        
-        loadGroups();
-        updateFollowingList();
-        setupObserver();
-        isInitialized = true;
-        
-        // Reset initialization flag
-        window.groupTvInitializing = false;
+        // Wait a moment to ensure cleanup is complete
+        setTimeout(() => {
+            loadGroups();
+            updateFollowingList();
+            setupObserver();
+            isInitialized = true;
+            
+            // Reset initialization flag
+            window.groupTvInitializing = false;
+        }, 100);
         
         // Listen for storage changes (only add once)
         if (!window.groupTvStorageListenerAdded) {
@@ -473,11 +509,18 @@
     
     let lastUrl = location.href;
     let navigationTimeout = null;
+    let isNavigating = false;
+    let lastNavigationTime = 0;
     
     new MutationObserver(() => {
         const url = location.href;
-        if (url !== lastUrl) {
+        const now = Date.now();
+        
+        // Only process navigation if URL changed, not currently navigating, and enough time has passed since last navigation
+        if (url !== lastUrl && !isNavigating && (now - lastNavigationTime) > 2000) {
+            isNavigating = true;
             lastUrl = url;
+            lastNavigationTime = now;
             
             // Clear any existing timeout
             if (navigationTimeout) {
@@ -486,21 +529,35 @@
             
             // Small delay to let Twitch's SPA navigation complete
             navigationTimeout = setTimeout(() => {
-                // Only reinitialize if we're on a different page
-                if (location.href !== lastUrl) {
+                // Only reinitialize if we're on a different page and not already initializing
+                if (location.href !== lastUrl || window.groupTvInitializing) {
+                    isNavigating = false;
                     return;
                 }
+                
+                // Additional check to prevent rapid re-initialization
+                if ((Date.now() - lastNavigationTime) < 1000) {
+                    isNavigating = false;
+                    return;
+                }
+                
                 init();
-            }, 800);
+                isNavigating = false;
+            }, 1500);
         }
     }).observe(document, {subtree: true, childList: true});
     
     // Periodic check to ensure groups stay visible and update live status
     setInterval(() => {
-        if (isInitialized && groups.length > 0) {
+        // Don't run periodic checks during navigation, initialization, or updates
+        if (isInitialized && groups.length > 0 && !window.groupTvInitializing && !isNavigating && !window.groupTvUpdating) {
             const existingGroups = document.querySelectorAll('.group-tv-custom-group');
             if (existingGroups.length === 0) {
-                updateFollowingList();
+                // Only update if we're not in the middle of navigation and following list exists
+                const followingList = findFollowingList();
+                if (followingList) {
+                    updateFollowingList();
+                }
             } else {
                 // Only update if there are visible streamers
                 const visibleIndicators = document.querySelectorAll('.group-tv-streamers.show .group-tv-live-indicator');
@@ -509,6 +566,6 @@
                 }
             }
         }
-    }, 5000); // Increased interval to reduce interference
+    }, 15000); // Increased interval to reduce interference
     
 })();
