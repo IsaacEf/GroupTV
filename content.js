@@ -29,9 +29,14 @@
         const groupDiv = document.createElement('div');
         groupDiv.className = 'group-tv-custom-group';
         
+        // Create icon element - use custom icon if available, otherwise default folder emoji
+        const iconElement = group.iconUrl ? 
+            `<img src="${group.iconUrl}" class="group-tv-group-icon" alt="Group icon">` :
+            `<span class="group-tv-group-icon" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--color-background-hover, #3a3a3d); font-size: 16px;">📁</span>`;
+        
         groupDiv.innerHTML = `
             <div class="group-tv-group-content">
-                <span class="group-tv-group-icon">📁</span>
+                ${iconElement}
                 <span>${group.name}</span>
                 <span class="group-tv-group-count">(${group.streamers.length})</span>
             </div>
@@ -41,7 +46,6 @@
             </div>
         `;
         
-        // Use event delegation to prevent issues with dynamic content
         groupDiv.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -57,7 +61,6 @@
             }
         });
         
-        // Add delete button handler with proper event handling
         const deleteBtn = groupDiv.querySelector('.group-tv-delete-btn');
         if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
@@ -67,7 +70,6 @@
             });
         }
         
-        // Add streamer button handler with proper event handling
         const addStreamerBtn = groupDiv.querySelector('.group-tv-add-streamer-btn');
         if (addStreamerBtn) {
             addStreamerBtn.addEventListener('click', (e) => {
@@ -152,10 +154,9 @@
             return;
         }
         
-        // Reset retry count on success
         retryCount = 0;
         
-        // More comprehensive cleanup - remove ALL possible group elements
+        //remove ALL possible group elements
         const allGroupElements = document.querySelectorAll(`
             .group-tv-wrapper,
             .group-tv-custom-group,
@@ -170,29 +171,24 @@
         
         // Wait a bit to ensure DOM is completely clean before adding new elements
         setTimeout(() => {
-            // Double-check that no group elements remain
             const remainingElements = document.querySelectorAll('.group-tv-wrapper, .group-tv-custom-group, .group-tv-streamers');
             if (remainingElements.length > 0) {
                 remainingElements.forEach(element => element.remove());
             }
             
-            // Only add groups if we have groups to add
             if (groups && groups.length > 0) {
                 groups.forEach(group => {
                     const groupElement = createGroupElement(group);
                     const streamersElement = createStreamerElements(group);
                     
-                    // Create a wrapper div to keep group and streamers together
                     const groupWrapper = document.createElement('div');
                     groupWrapper.className = 'group-tv-wrapper';
                     groupWrapper.appendChild(groupElement);
                     groupWrapper.appendChild(streamersElement);
                     
-                    // Insert at the very beginning
                     followingList.insertBefore(groupWrapper, followingList.firstChild);
                 });
                 
-                // Update live status indicators after creating the elements
                 setTimeout(updateLiveStatusIndicators, 500);
             }
             
@@ -201,7 +197,6 @@
         }, 200);
     }
     
-    // Function to toggle group visibility
     function toggleGroupVisibility(groupId) {
         const streamersContainer = document.querySelector(`.group-tv-streamers[data-group-id="${groupId}"]`);
         
@@ -218,7 +213,6 @@
         }
     }
     
-    // Function to delete a group
     function deleteGroup(groupId) {
         if (confirm('Are you sure you want to delete this group?')) {
             groups = groups.filter(group => group.id !== groupId);
@@ -238,7 +232,6 @@
         }
     }
     
-    // Function to add streamer to group
     function addStreamerToGroup(groupId) {
         const streamerName = prompt('Enter streamer name (without @):');
         if (!streamerName || !streamerName.trim()) return;
@@ -274,10 +267,9 @@
         }
     }
     
-    // Function to check if a streamer is live using multiple methods
     async function checkStreamerLiveStatus(streamerName) {
         try {
-            // Method 1: Try Twitch's GraphQL API
+            //Twitch's GraphQL API
             try {
                 const query = {
                     query: `
@@ -309,7 +301,7 @@
                 // GraphQL failed, try fallback methods
             }
             
-            // Method 2: Check if we're on the streamer's page and they have live elements
+            //Check if we're on the streamer's page and they have live elements
             if (window.location.pathname === `/${streamerName}`) {
                 const liveElements = document.querySelectorAll(`
                     [data-a-target="stream-info-card-live-indicator"],
@@ -326,7 +318,7 @@
                 }
             }
             
-            // Method 3: Look for the streamer in Twitch's live sections
+            //Look for the streamer in Twitch's live sections
             const liveSections = document.querySelectorAll(`
                 [data-a-target="recommended-channels"],
                 [data-testid="recommended-channels"],
@@ -361,11 +353,9 @@
         }
     }
     
-    // Rate limiting for API calls
     let lastApiCall = 0;
     const apiCallDelay = 200; // 200ms between API calls to respect rate limits
     
-    // Function to update live status indicators for all visible streamers
     async function updateLiveStatusIndicators() {
         // Only update indicators that are visible (in expanded groups)
         const visibleIndicators = document.querySelectorAll('.group-tv-streamers.show .group-tv-live-indicator');
@@ -436,7 +426,6 @@
         });
     }
     
-    // Initialize the extension
     function init() {
         // Prevent multiple initializations
         if (window.groupTvInitializing) {
@@ -522,7 +511,6 @@
             lastUrl = url;
             lastNavigationTime = now;
             
-            // Clear any existing timeout
             if (navigationTimeout) {
                 clearTimeout(navigationTimeout);
             }
@@ -549,11 +537,9 @@
     
     // Periodic check to ensure groups stay visible and update live status
     setInterval(() => {
-        // Don't run periodic checks during navigation, initialization, or updates
         if (isInitialized && groups.length > 0 && !window.groupTvInitializing && !isNavigating && !window.groupTvUpdating) {
             const existingGroups = document.querySelectorAll('.group-tv-custom-group');
             if (existingGroups.length === 0) {
-                // Only update if we're not in the middle of navigation and following list exists
                 const followingList = findFollowingList();
                 if (followingList) {
                     updateFollowingList();
@@ -566,6 +552,6 @@
                 }
             }
         }
-    }, 15000); // Increased interval to reduce interference
+    }, 15000); 
     
 })();

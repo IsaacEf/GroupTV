@@ -46,19 +46,59 @@ document.addEventListener('DOMContentLoaded', function() {
         groups.forEach(group => {
             const groupDiv = document.createElement('div');
             groupDiv.className = 'group-item';
+            
+            // Create icon element
+            const iconElement = group.iconUrl ? 
+                `<img src="${group.iconUrl}" class="group-icon" alt="Group icon">` :
+                `<div class="group-icon" style="background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 50%;">📁</div>`;
+            
             groupDiv.innerHTML = `
-                <div>
-                    <div class="group-name">${group.name}</div>
-                    <div class="streamer-count">${group.streamers.length} streamers</div>
+                <div class="group-header">
+                    ${iconElement}
+                    <div class="group-title">${group.name} (${group.streamers.length} streamers)</div>
                 </div>
-                <button onclick="deleteGroup('${group.id}')" style="background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Delete</button>
+                <div class="group-actions">
+                    <button class="icon-upload-btn" data-group-id="${group.id}">Upload Picture</button>
+                    ${group.iconUrl ? `<button class="remove-icon-btn" data-group-id="${group.id}">Delete Picture</button>` : ''}
+                    <button class="delete-btn" data-group-id="${group.id}">Delete Group</button>
+                </div>
             `;
             groupsList.appendChild(groupDiv);
+        });
+        
+        // Add event listeners after creating the elements
+        addEventListeners();
+    }
+    
+    // Add event listeners to the buttons
+    function addEventListeners() {
+        // Upload icon buttons
+        document.querySelectorAll('.icon-upload-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                uploadIcon(groupId);
+            });
+        });
+        
+        // Remove icon buttons
+        document.querySelectorAll('.remove-icon-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                removeIcon(groupId);
+            });
+        });
+        
+        // Delete buttons
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                deleteGroup(groupId);
+            });
         });
     }
     
     // Delete a group
-    window.deleteGroup = function(groupId) {
+    function deleteGroup(groupId) {
         if (confirm('Are you sure you want to delete this group?')) {
             chrome.storage.local.get(['groups'], function(result) {
                 const groups = result.groups || [];
@@ -69,5 +109,84 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         }
+    }
+    
+    // Upload icon for a group
+    window.uploadIcon = function(groupId) {
+        // Create a temporary file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        
+        fileInput.addEventListener('change', function(e) {
+            handleIconUpload(groupId, this);
+            // Clean up the temporary input
+            document.body.removeChild(fileInput);
+        });
+        
+        // Add to DOM temporarily and trigger click
+        document.body.appendChild(fileInput);
+        fileInput.click();
     };
+    
+    // Handle icon upload
+    window.handleIconUpload = function(groupId, input) {
+        const file = input.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+            
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image file is too large. Please select an image smaller than 2MB.');
+                return;
+            }
+            
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const iconUrl = e.target.result;
+                updateGroupIcon(groupId, iconUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    // Update group icon
+    function updateGroupIcon(groupId, iconUrl) {
+        chrome.storage.local.get(['groups'], function(result) {
+            const groups = result.groups || [];
+            const groupIndex = groups.findIndex(group => group.id === groupId);
+            
+            if (groupIndex !== -1) {
+                groups[groupIndex].iconUrl = iconUrl;
+                
+                chrome.storage.local.set({groups: groups}, function() {
+                    displayGroups(groups);
+                });
+            }
+        });
+    }
+    
+    // Remove icon from group
+    function removeIcon(groupId) {
+        if (confirm('Remove custom icon and use default folder icon?')) {
+            chrome.storage.local.get(['groups'], function(result) {
+                const groups = result.groups || [];
+                const groupIndex = groups.findIndex(group => group.id === groupId);
+                
+                if (groupIndex !== -1) {
+                    delete groups[groupIndex].iconUrl;
+                    
+                    chrome.storage.local.set({groups: groups}, function() {
+                        displayGroups(groups);
+                    });
+                }
+            });
+        }
+    }
 });
