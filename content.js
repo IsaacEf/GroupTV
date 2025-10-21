@@ -148,6 +148,26 @@
         return null;
     }
     
+    // Wait for DOM to be fully ready with better detection
+    function waitForDOMReady() {
+        return new Promise((resolve) => {
+            // If DOM is already ready
+            if (document.readyState === 'complete') {
+                resolve();
+                return;
+            }
+            
+            // Wait for DOMContentLoaded
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', resolve);
+                return;
+            }
+            
+            // If interactive, wait a bit more
+            setTimeout(resolve, 100);
+        });
+    }
+    
     //update the following list
     function updateFollowingList() {
         // Prevent multiple simultaneous updates
@@ -194,6 +214,26 @@
             }
             
             if (groups && groups.length > 0) {
+                // Find the best insertion point - look for the first non-group element
+                let insertionPoint = followingList.firstChild;
+                
+                // If we're on startup and the DOM might not be fully ready,
+                // wait a bit more and try to find a better insertion point
+                if (window.location.pathname === '/' || window.location.pathname === '') {
+                    // On homepage, look for the first actual content element
+                    const contentElements = followingList.querySelectorAll('div, section, nav');
+                    for (const element of contentElements) {
+                        if (!element.classList.contains('group-tv-wrapper') && 
+                            !element.querySelector('.group-tv-wrapper')) {
+                            insertionPoint = element;
+                            break;
+                        }
+                    }
+                } else {
+                    // On other pages, insert at the very top
+                    insertionPoint = followingList.firstChild;
+                }
+                
                 groups.forEach(group => {
                     const groupElement = createGroupElement(group);
                     const streamersElement = createStreamerElements(group);
@@ -203,7 +243,12 @@
                     groupWrapper.appendChild(groupElement);
                     groupWrapper.appendChild(streamersElement);
                     
-                    followingList.insertBefore(groupWrapper, followingList.firstChild);
+                    // Insert at the determined insertion point
+                    if (insertionPoint) {
+                        followingList.insertBefore(groupWrapper, insertionPoint);
+                    } else {
+                        followingList.appendChild(groupWrapper);
+                    }
                 });
                 
                 setTimeout(updateLiveStatusIndicators, 500);
@@ -499,9 +544,26 @@
         });
         
         // Wait a moment to ensure cleanup is complete
-        setTimeout(() => {
+        setTimeout(async () => {
             loadGroups();
-            updateFollowingList();
+            
+            // Wait for DOM to be fully ready
+            await waitForDOMReady();
+            
+            // Add a longer delay on startup to ensure DOM is fully ready
+            const isStartup = window.location.pathname === '/' || window.location.pathname === '';
+            const delay = isStartup ? 1000 : 300;
+            
+            setTimeout(() => {
+                updateFollowingList();
+                
+                // On startup, try updating again after a longer delay to ensure proper positioning
+                if (isStartup) {
+                    setTimeout(() => {
+                        updateFollowingList();
+                    }, 2000);
+                }
+            }, delay);
             setupObserver();
             isInitialized = true;
             
