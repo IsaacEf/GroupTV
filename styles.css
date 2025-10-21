@@ -187,3 +187,40 @@
     outline: 2px solid var(--color-border-brand, #9146ff);
     outline-offset: 1px;
 }
+
+/* Live status indicators */
+.group-tv-live-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 8px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.group-tv-live-indicator.live {
+    background-color: #ff0000;
+    box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+    animation: pulse 2s infinite;
+    opacity: 1;
+}
+
+.group-tv-live-indicator.offline {
+    background-color: #6c6c6c;
+    opacity: 0.5;
+    box-shadow: none;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+    }
+}
