@@ -8,7 +8,8 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://www.twitch.tv/*"
+    "https://www.twitch.tv/*",
+    "https://api.twitch.tv/*"
   ],
   "content_scripts": [
     {
