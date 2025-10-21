@@ -32,6 +32,38 @@
 .group-tv-group-icon {
     margin-right: 8px;
     font-size: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+/* Custom icon styling for Twitch sidebar */
+.group-tv-group-icon img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-base, #3a3a3d);
+    object-fit: cover;
+    object-position: center;
+    background: var(--color-background-base, #18181b);
+    display: block;
+    max-width: 32px;
+    max-height: 32px;
+}
+
+/* Default folder emoji styling */
+.group-tv-group-icon span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-background-hover, #3a3a3d);
+    font-size: 16px;
+    border: 1px solid var(--color-border-base, #3a3a3d);
 }
 
 .group-tv-group-count {
