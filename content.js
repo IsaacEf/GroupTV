@@ -94,15 +94,32 @@
             streamerDiv.setAttribute('data-streamer-name', streamer.name);
             
             streamerDiv.innerHTML = `
-                <span>${streamer.name}</span>
+                <div class="group-tv-streamer-content">
+                    <button class="group-tv-remove-streamer-btn" data-group-id="${group.id}" data-streamer-name="${streamer.name}">×</button>
+                    <span class="group-tv-streamer-name">${streamer.name}</span>
+                </div>
                 <div class="group-tv-live-indicator offline" data-streamer="${streamer.name}"></div>
             `;
             
             streamerDiv.addEventListener('click', (e) => {
+                // Don't open streamer page if clicking the remove button
+                if (e.target.classList.contains('group-tv-remove-streamer-btn')) {
+                    return;
+                }
                 e.preventDefault();
                 e.stopPropagation();
                 window.open(`https://www.twitch.tv/${streamer.name}`, '_blank');
             });
+            
+            // Add remove button event listener
+            const removeBtn = streamerDiv.querySelector('.group-tv-remove-streamer-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeStreamerFromGroup(group.id, streamer.name);
+                });
+            }
             
             streamersContainer.appendChild(streamerDiv);
         });
@@ -264,6 +281,30 @@
         } catch (error) {
             console.log('Extension context invalidated, stopping execution');
             return;
+        }
+    }
+    
+    // Function to remove streamer from group
+    function removeStreamerFromGroup(groupId, streamerName) {
+        if (confirm(`Remove ${streamerName} from this group?`)) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            // Remove the streamer from the group
+            group.streamers = group.streamers.filter(s => s.name !== streamerName);
+            
+            try {
+                chrome.storage.local.set({groups: groups}, function() {
+                    if (chrome.runtime.lastError) {
+                        console.log('Extension context invalidated, stopping execution');
+                        return;
+                    }
+                    updateFollowingList();
+                });
+            } catch (error) {
+                console.log('Extension context invalidated, stopping execution');
+                return;
+            }
         }
     }
     
