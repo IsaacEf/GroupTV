@@ -53,17 +53,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 `<div class="group-icon" style="background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 50%;">📁</div>`;
             
             groupDiv.innerHTML = `
-                <div class="group-info">
+                <div class="group-header">
                     ${iconElement}
-                    <div class="group-details">
-                        <div class="group-name">${group.name}</div>
-                        <div class="streamer-count">${group.streamers.length} streamers</div>
-                    </div>
+                    <div class="group-title">${group.name} (${group.streamers.length} streamers)</div>
                 </div>
                 <div class="group-actions">
-                    <button class="icon-upload-btn" data-group-id="${group.id}">📷</button>
-                    ${group.iconUrl ? `<button class="remove-icon-btn" data-group-id="${group.id}">🗑️</button>` : ''}
-                    <button class="delete-btn" data-group-id="${group.id}">Delete</button>
+                    <button class="icon-upload-btn" data-group-id="${group.id}">Upload Picture</button>
+                    ${group.iconUrl ? `<button class="remove-icon-btn" data-group-id="${group.id}">Delete Picture</button>` : ''}
+                    <button class="delete-btn" data-group-id="${group.id}">Delete Group</button>
                 </div>
             `;
             groupsList.appendChild(groupDiv);
