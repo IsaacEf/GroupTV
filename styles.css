@@ -161,6 +161,42 @@ img.group-tv-group-icon {
     min-height: 40px;
 }
 
+/* Streamer content container */
+.group-tv-streamer-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+/* Streamer name styling */
+.group-tv-streamer-name {
+    margin-left: 8px;
+}
+
+/* Remove streamer button */
+.group-tv-remove-streamer-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted, #6c6c6c);
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.15s ease;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.group-tv-remove-streamer-btn:hover {
+    background: var(--color-background-button-danger-hover, rgba(255, 0, 0, 0.1));
+    color: var(--color-text-base, #efeff1);
+}
+
 .group-tv-streamer:hover {
     background: var(--color-background-hover, #3a3a3d);
 }
