@@ -8,12 +8,21 @@
     const maxRetries = 10;
     
     function loadGroups() {
-        chrome.storage.local.get(['groups'], function(result) {
-            groups = result.groups || [];
-            if (isInitialized) {
-                updateFollowingList();
-            }
-        });
+        try {
+            chrome.storage.local.get(['groups'], function(result) {
+                if (chrome.runtime.lastError) {
+                    console.log('Extension context invalidated, stopping execution');
+                    return;
+                }
+                groups = result.groups || [];
+                if (isInitialized) {
+                    updateFollowingList();
+                }
+            });
+        } catch (error) {
+            console.log('Extension context invalidated, stopping execution');
+            return;
+        }
     }
     
     function createGroupElement(group) {
@@ -32,7 +41,11 @@
             </div>
         `;
         
+        // Use event delegation to prevent issues with dynamic content
         groupDiv.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             // Don't toggle if clicking buttons or their children
             const isButtonClick = e.target.closest('.group-tv-delete-btn') || 
                                  e.target.closest('.group-tv-add-streamer-btn') ||
@@ -44,19 +57,25 @@
             }
         });
         
-        // Add delete button handler
+        // Add delete button handler with proper event handling
         const deleteBtn = groupDiv.querySelector('.group-tv-delete-btn');
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteGroup(group.id);
-        });
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteGroup(group.id);
+            });
+        }
         
-        // Add streamer button handler
+        // Add streamer button handler with proper event handling
         const addStreamerBtn = groupDiv.querySelector('.group-tv-add-streamer-btn');
-        addStreamerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            addStreamerToGroup(group.id);
-        });
+        if (addStreamerBtn) {
+            addStreamerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addStreamerToGroup(group.id);
+            });
+        }
         
         return groupDiv;
     }
@@ -77,7 +96,9 @@
                 <div class="group-tv-live-indicator offline" data-streamer="${streamer.name}"></div>
             `;
             
-            streamerDiv.addEventListener('click', () => {
+            streamerDiv.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 window.open(`https://www.twitch.tv/${streamer.name}`, '_blank');
             });
             
@@ -123,25 +144,33 @@
         // Reset retry count on success
         retryCount = 0;
         
+        // Remove ALL existing group elements completely
         const existingWrappers = document.querySelectorAll('.group-tv-wrapper');
         existingWrappers.forEach(wrapper => wrapper.remove());
         
-        groups.forEach(group => {
-            const groupElement = createGroupElement(group);
-            const streamersElement = createStreamerElements(group);
-            
-            // Create a wrapper div to keep group and streamers together
-            const groupWrapper = document.createElement('div');
-            groupWrapper.className = 'group-tv-wrapper';
-            groupWrapper.appendChild(groupElement);
-            groupWrapper.appendChild(streamersElement);
-            
-            // Insert at the very beginning
-            followingList.insertBefore(groupWrapper, followingList.firstChild);
-        });
+        // Also remove any orphaned group elements
+        const orphanedGroups = document.querySelectorAll('.group-tv-custom-group, .group-tv-streamers');
+        orphanedGroups.forEach(element => element.remove());
         
-        // Update live status indicators after creating the elements
-        setTimeout(updateLiveStatusIndicators, 500);
+        // Wait a bit to ensure DOM is clean before adding new elements
+        setTimeout(() => {
+            groups.forEach(group => {
+                const groupElement = createGroupElement(group);
+                const streamersElement = createStreamerElements(group);
+                
+                // Create a wrapper div to keep group and streamers together
+                const groupWrapper = document.createElement('div');
+                groupWrapper.className = 'group-tv-wrapper';
+                groupWrapper.appendChild(groupElement);
+                groupWrapper.appendChild(streamersElement);
+                
+                // Insert at the very beginning
+                followingList.insertBefore(groupWrapper, followingList.firstChild);
+            });
+            
+            // Update live status indicators after creating the elements
+            setTimeout(updateLiveStatusIndicators, 500);
+        }, 100);
     }
     
     // Function to toggle group visibility
@@ -166,9 +195,18 @@
         if (confirm('Are you sure you want to delete this group?')) {
             groups = groups.filter(group => group.id !== groupId);
             
-            chrome.storage.local.set({groups: groups}, function() {
-                updateFollowingList();
-            });
+            try {
+                chrome.storage.local.set({groups: groups}, function() {
+                    if (chrome.runtime.lastError) {
+                        console.log('Extension context invalidated, stopping execution');
+                        return;
+                    }
+                    updateFollowingList();
+                });
+            } catch (error) {
+                console.log('Extension context invalidated, stopping execution');
+                return;
+            }
         }
     }
     
@@ -194,9 +232,18 @@
         
         group.streamers.push(streamer);
         
-        chrome.storage.local.set({groups: groups}, function() {
-            updateFollowingList();
-        });
+        try {
+            chrome.storage.local.set({groups: groups}, function() {
+                if (chrome.runtime.lastError) {
+                    console.log('Extension context invalidated, stopping execution');
+                    return;
+                }
+                updateFollowingList();
+            });
+        } catch (error) {
+            console.log('Extension context invalidated, stopping execution');
+            return;
+        }
     }
     
     // Function to check if a streamer is live using multiple methods
@@ -363,20 +410,58 @@
     
     // Initialize the extension
     function init() {
-        if (isInitialized) return;
+        // Prevent multiple initializations
+        if (window.groupTvInitializing) {
+            return;
+        }
+        window.groupTvInitializing = true;
+        
+        // Clean up existing observers and timeouts
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
+        
+        if (window.groupTvUpdateTimeout) {
+            clearTimeout(window.groupTvUpdateTimeout);
+            window.groupTvUpdateTimeout = null;
+        }
+        
+        // Remove all existing elements first
+        const existingWrappers = document.querySelectorAll('.group-tv-wrapper');
+        existingWrappers.forEach(wrapper => wrapper.remove());
+        
+        // Also remove any orphaned group elements
+        const orphanedGroups = document.querySelectorAll('.group-tv-custom-group, .group-tv-streamers');
+        orphanedGroups.forEach(element => element.remove());
         
         loadGroups();
         updateFollowingList();
         setupObserver();
         isInitialized = true;
         
-        // Listen for storage changes
-        chrome.storage.onChanged.addListener(function(changes, namespace) {
-            if (namespace === 'local' && changes.groups) {
-                groups = changes.groups.newValue || [];
-                updateFollowingList();
+        // Reset initialization flag
+        window.groupTvInitializing = false;
+        
+        // Listen for storage changes (only add once)
+        if (!window.groupTvStorageListenerAdded) {
+            try {
+                chrome.storage.onChanged.addListener(function(changes, namespace) {
+                    if (chrome.runtime.lastError) {
+                        console.log('Extension context invalidated, stopping execution');
+                        return;
+                    }
+                    if (namespace === 'local' && changes.groups) {
+                        groups = changes.groups.newValue || [];
+                        updateFollowingList();
+                    }
+                });
+                window.groupTvStorageListenerAdded = true;
+            } catch (error) {
+                console.log('Extension context invalidated, stopping execution');
+                return;
             }
-        });
+        }
     }
     
     // Wait for page to load
@@ -387,12 +472,26 @@
     }
     
     let lastUrl = location.href;
+    let navigationTimeout = null;
+    
     new MutationObserver(() => {
         const url = location.href;
         if (url !== lastUrl) {
             lastUrl = url;
-            isInitialized = false;
-            setTimeout(init, 1000);
+            
+            // Clear any existing timeout
+            if (navigationTimeout) {
+                clearTimeout(navigationTimeout);
+            }
+            
+            // Small delay to let Twitch's SPA navigation complete
+            navigationTimeout = setTimeout(() => {
+                // Only reinitialize if we're on a different page
+                if (location.href !== lastUrl) {
+                    return;
+                }
+                init();
+            }, 800);
         }
     }).observe(document, {subtree: true, childList: true});
     
@@ -410,6 +509,6 @@
                 }
             }
         }
-    }, 3000);
+    }, 5000); // Increased interval to reduce interference
     
 })();
