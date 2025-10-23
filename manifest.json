@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "description": "Create custom groups of Twitch streamers for easy access in the sidebar",
   "permissions": [
-    "storage",
-    "activeTab"
+    "storage"
   ],
   "host_permissions": [
     "https://www.twitch.tv/*",
